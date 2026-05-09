@@ -1,32 +1,3 @@
-#!/usr/bin/env python3
-"""
-MasterHttpRelayVPN — VPS Exit Node Server  (Linux only)
-
-A lightweight HTTP relay server you can run on your own Linux VPS.
-It receives relay requests forwarded by Apps Script (on behalf of
-MasterHttpRelayVPN) and makes the actual outbound HTTP/HTTPS connections
-using your VPS's IP address.
-
-Traffic path with this server:
-  Browser → Local Proxy → Apps Script (Google) → THIS SERVER → Target website
-
-Usage:
-  python3 vps_exit_node.py --psk YOUR_STRONG_SECRET [--host 0.0.0.0] [--port 8181]
-
-Or use the environment variable instead of --psk:
-  export EXIT_NODE_PSK=YOUR_STRONG_SECRET
-  python3 vps_exit_node.py
-
-For easy installation on a fresh Linux VPS, use the provided installer:
-  bash setup_vps_exit_node.sh
-
-For production use, run behind a reverse proxy (nginx / Caddy) that
-handles TLS so the endpoint is reachable over HTTPS.
-
-NOTE: This script is designed for Linux only.  It will refuse to start
-on Windows or macOS.
-"""
-
 import argparse
 import base64
 import http.server
