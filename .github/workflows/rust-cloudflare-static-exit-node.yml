@@ -6,7 +6,7 @@ on:
 jobs:
   relay:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 360   # maximum 6 hours
 
     steps:
       - uses: actions/checkout@v4
@@ -20,8 +20,8 @@ jobs:
         env:
           EXIT_NODE_PSK: ${{ secrets.EXIT_NODE_PSK }}
         run: |
-          python3 .github/script/rust_exit_node.py --host 127.0.0.1 --port 8181 &
-          sleep 2
+          python3 .github/script/rust-exit-node.py --host 127.0.0.1 --port 8181 &
+          sleep 2   # give it a moment to bind
 
       - name: Connect to Cloudflare Tunnel (static domain)
         env:
@@ -29,12 +29,12 @@ jobs:
         run: |
           ./cloudflared tunnel run --token "$CF_TUNNEL_TOKEN" > /tmp/tunnel.log 2>&1 &
           sleep 10
-          echo "🌐 Tunnel established – exit.yourdomain.com is now live."
+          echo "🌐 Tunnel established – exit node is now live."
 
-      - name: Keep alive
+      - name: running
         run: |
-          echo "running perfectly!"
           echo "=================================================="
+          echo "running!"
           while true; do
             sleep 3600
             echo "[$(date)] Still alive!"
