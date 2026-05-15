@@ -1,0 +1,57 @@
+name: zyrln-cloudflare-dynamic-exit-node
+
+on:
+  workflow_dispatch:   # manual trigger from the Actions tab
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360   # 6 hours (max for public repos)
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'   # or newer (must support your source)
+
+      - name: Build
+        run: go build -o zyrln-relay .github/script/zyrln-vps-exit-node.go
+
+      - name: Start relay in background
+        env:
+          ZYRLN_RELAY_LISTEN: 127.0.0.1:8787
+          ZYRLN_RELAY_KEY: ${{ secrets.TUNNEL_AUTH_KEY }}
+        run: |
+          chmod +x zyrln-relay
+          ./zyrln-relay &
+          # Wait for health endpoint
+          for i in $(seq 1 20); do
+            if curl -s http://127.0.0.1:8787/healthz >/dev/null 2>&1; then
+              echo "Relay is up"
+              break
+            fi
+            sleep 0.5
+          done
+
+      - name: Install
+        run: |
+          curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+          chmod +x cloudflared
+          ./cloudflared --version
+
+      - name: Create
+        run: |
+          ./cloudflared tunnel --url http://127.0.0.1:8787 2>&1 | tee tunnel.log &
+          sleep 5
+          # Extract the trycloudflare.com URL
+          grep -oP 'https://.*?\.trycloudflare\.com' tunnel.log | head -1 > tunnel-url.txt
+          echo "================================================================="
+          echo "PUBLIC RELAY URL: $(cat tunnel-url.txt)"
+          echo "================================================================="
+        id: tunnel
+
+      - name: Keep
+        run: sleep 21600
